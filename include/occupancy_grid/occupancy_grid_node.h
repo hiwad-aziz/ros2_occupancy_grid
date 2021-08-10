@@ -3,6 +3,7 @@
 
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav_msgs/msg/odometry.hpp"
+#include "occupancy_grid/occupancy_grid.h"
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"
 
@@ -18,6 +19,7 @@ class OccupancyGridNode : public rclcpp::Node {
   void handleOdom(const nav_msgs::msg::Odometry::SharedPtr odom);
   void handleLaserScan(const sensor_msgs::msg::LaserScan::SharedPtr laser_scan);
   nav_msgs::msg::Odometry prev_odom_{};
+  std::unique_ptr<OccupancyGrid> grid_map_;
 };
 
 #endif  // OCCUPANCYGRIDNODE_H

@@ -9,9 +9,10 @@
 using namespace std::chrono_literals;
 using std::placeholders::_1;
 
-OccupancyGridNode::OccupancyGridNode() : Node("occupancy_grid")
+OccupancyGridNode::OccupancyGridNode()
+    : Node("occupancy_grid"), grid_map_{std::make_unique<OccupancyGrid>(20, 0.1)}
 {
-  // Create publisher
+  // create publisher
   publisher_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>("ocg", 10);
   // create subscribers
   odom_subscriber_ = this->create_subscription<nav_msgs::msg::Odometry>(
@@ -25,19 +26,29 @@ void OccupancyGridNode::handleOdom(const nav_msgs::msg::Odometry::SharedPtr odom
   // transform based on current and previous odom data
   double delta_x = odom->pose.pose.position.x - prev_odom_.pose.pose.position.x;
   double delta_y = odom->pose.pose.position.y - prev_odom_.pose.pose.position.y;
+  double delta_yaw = 0.0;
 
-  // Update previous odometry data
+  grid_map_->update(delta_x, delta_y, delta_yaw);
+
+  // update previous odometry data
   prev_odom_ = *odom;
 
   // fill msg and publish grid
+  auto message = nav_msgs::msg::OccupancyGrid();
+  grid_map_->toRosMsg(message);
+  publisher_->publish(message);
 }
 
 void OccupancyGridNode::handleLaserScan(const sensor_msgs::msg::LaserScan::SharedPtr laser_scan)
 {
   // update grid based on new laser scan data
-  // calculate cartesian coordinate for each point in laser scan
-  // use bresenhams line algorithm to update all observed cells
+  // TODO: calculate cartesian coordinate for each point in laser scan
+  std::vector<Point2d> scan;
+  grid_map_->update(scan);
   // fill msg and publish grid
+  auto message = nav_msgs::msg::OccupancyGrid();
+  grid_map_->toRosMsg(message);
+  publisher_->publish(message);
 }
 
 int main(int argc, char* argv[])
