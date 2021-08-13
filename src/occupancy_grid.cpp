@@ -9,6 +9,7 @@ OccupancyGrid::OccupancyGrid(unsigned int grid_size, double cell_size)
 {
   assert(fmod(grid_size_, cell_size_) == 0.0);
   num_cells_ = grid_size_ / cell_size_;
+  grid_center_ = {num_cells_ / 2, num_cells_ / 2};
   map_.resize(num_cells_, num_cells_);
   map_.setConstant(0.5);
 }
@@ -36,6 +37,7 @@ void OccupancyGrid::toRosMsg(nav_msgs::msg::OccupancyGrid& occupancy_grid_msg)
 void OccupancyGrid::update(double delta_x, double delta_y, double delta_yaw)
 {
   Eigen::MatrixXd temp_map = map_;
+  // Convert position delta to cell delta
   int delta_x_grid = delta_x / cell_size_;
   int delta_y_grid = delta_y / cell_size_;
   double cos_dyaw = cos(delta_yaw);
@@ -57,14 +59,40 @@ void OccupancyGrid::update(double delta_x, double delta_y, double delta_yaw)
 void OccupancyGrid::update(const std::vector<Point2d>& laser_scan)
 {
   for (const Point2d& point : laser_scan) {
-    updateCellProbability(point.x, point.y, CellState::OCCUPIED);
+    // Convert position of detection to cell indices
+    Point2d grid_point{point.x / cell_size_, point.x / cell_size_};
+    updateCellProbability(grid_point, CellState::OCCUPIED);
     std::vector<Point2d> free_cells;
-    // TODO: run Bresenham algorithm to get all free cells
-    free_cells.push_back({0.0, 0.0});
+    // Run Bresenham algorithm to get all free cells
+    getFreeCells(free_cells);
     for (const Point2d& free_cell : free_cells) {
       updateCellProbability(free_cell.x, free_cell.y, CellState::FREE);
     }
   }
 }
 
-void OccupancyGrid::updateCellProbability(int x, int y, CellState state) {}
+void OccupancyGrid::updateCellProbability(Point2d point, CellState state)
+{
+  // Calculate new log odds and add to current log odds
+  double log_prob{0.0};
+  switch (state) {
+    case CellState::FREE:
+      log_prob = log(p_free_ / (1.0 - p_free_));
+      break;
+    case CellState::OCCUPIED:
+      log_prob = log(p_occ_ / (1.0 - p_occ_));
+      break;
+    default:
+      log_prob = log(p_prior_ / (1.0 - p_prior_));
+      break;
+  }
+  double current_log_prob = log(map_(point.x,point.y) / (1.0 - map_(point.x,point.y));
+  current_log_prob += log_prob;
+  // Convert log odds to probability and update cell
+  map_(point.x,point.y) = 1.0 - 1.0 / (1 + exp(current_log_prob));
+}
+
+void OccupancyGrid::getFreeCells(Point2d detection, std::vector<Point2d>& free_cells)
+{
+  free_cells.push_back({0.0, 0.0});
+}
