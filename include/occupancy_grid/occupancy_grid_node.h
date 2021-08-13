@@ -18,6 +18,8 @@ class OccupancyGridNode : public rclcpp::Node {
   rclcpp::TimerBase::SharedPtr timer_;
   void handleOdom(const nav_msgs::msg::Odometry::SharedPtr odom);
   void handleLaserScan(const sensor_msgs::msg::LaserScan::SharedPtr laser_scan);
+  std::vector<Point2d<double>> convertPolarScantoCartesianScan(
+      const sensor_msgs::msg::LaserScan::SharedPtr laser_scan);
   nav_msgs::msg::Odometry prev_odom_{};
   std::unique_ptr<OccupancyGrid> grid_map_;
 };

@@ -43,12 +43,28 @@ void OccupancyGridNode::handleLaserScan(const sensor_msgs::msg::LaserScan::Share
 {
   // update grid based on new laser scan data
   // TODO: calculate cartesian coordinate for each point in laser scan
-  std::vector<Point2d<double>> scan_cartesian;
+  std::vector<Point2d<double>> scan_cartesian = convertPolarScantoCartesianScan(laser_scan);
   grid_map_->update(scan_cartesian);
   // fill msg and publish grid
   auto message = nav_msgs::msg::OccupancyGrid();
   grid_map_->toRosMsg(message);
   publisher_->publish(message);
+}
+
+std::vector<Point2d<double>> OccupancyGridNode::convertPolarScantoCartesianScan(
+    const sensor_msgs::msg::LaserScan::SharedPtr laser_scan)
+{
+  std::vector<Point2d<double>> scan_cartesian;
+  scan_cartesian.reserve(laser_scan->ranges.size());
+  int angle = laser_scan->angle_min;
+  Point2d<double> cartesian_point;
+  for (float range : laser_scan->ranges) {
+    cartesian_point.x = range * cos(angle);
+    cartesian_point.y = range * sin(angle);
+    scan_cartesian.push_back(cartesian_point);
+    angle += laser_scan->angle_increment;
+  }
+  return scan_cartesian;
 }
 
 int main(int argc, char* argv[])
