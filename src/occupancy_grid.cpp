@@ -7,7 +7,6 @@
 OccupancyGrid::OccupancyGrid(unsigned int grid_size, double cell_size)
     : grid_size_{grid_size}, cell_size_{cell_size}
 {
-  assert(fmod(grid_size_, cell_size_) == 0.0);
   num_cells_ = floor(grid_size_ / cell_size_);
   grid_center_ = {num_cells_ / 2, num_cells_ / 2};
   map_.resize(num_cells_, num_cells_);

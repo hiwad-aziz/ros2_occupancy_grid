@@ -18,7 +18,8 @@ OccupancyGridNode::OccupancyGridNode()
   odom_subscriber_ = this->create_subscription<nav_msgs::msg::Odometry>(
       "odom", 10, std::bind(&OccupancyGridNode::handleOdom, this, std::placeholders::_1));
   laser_scan_subscriber_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
-      "scan", 10, std::bind(&OccupancyGridNode::handleLaserScan, this, std::placeholders::_1));
+      "scan", rclcpp::QoS(rclcpp::SystemDefaultsQoS()),
+      std::bind(&OccupancyGridNode::handleLaserScan, this, std::placeholders::_1));
 }
 
 void OccupancyGridNode::handleOdom(const nav_msgs::msg::Odometry::SharedPtr odom)
