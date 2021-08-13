@@ -8,7 +8,7 @@ OccupancyGrid::OccupancyGrid(unsigned int grid_size, double cell_size)
     : grid_size_{grid_size}, cell_size_{cell_size}
 {
   assert(fmod(grid_size_, cell_size_) == 0.0);
-  num_cells_ = grid_size_ / cell_size_;
+  num_cells_ = floor(grid_size_ / cell_size_);
   grid_center_ = {num_cells_ / 2, num_cells_ / 2};
   map_.resize(num_cells_, num_cells_);
   map_.setConstant(0.5);
@@ -21,6 +21,7 @@ void OccupancyGrid::toRosMsg(nav_msgs::msg::OccupancyGrid& occupancy_grid_msg)
   occupancy_grid_msg.info.resolution = cell_size_;
   occupancy_grid_msg.info.origin.position.x = 0.0;
   occupancy_grid_msg.info.origin.position.y = 0.0;
+  occupancy_grid_msg.header.frame_id = "odom";
 
   const int num_cells = grid_size_ * grid_size_;
   for (size_t i = 0; i < num_cells; i++) {
@@ -38,40 +39,42 @@ void OccupancyGrid::update(double delta_x, double delta_y, double delta_yaw)
 {
   Eigen::MatrixXd temp_map = map_;
   // Convert position delta to cell delta
-  int delta_x_grid = delta_x / cell_size_;
-  int delta_y_grid = delta_y / cell_size_;
+  double delta_x_grid = delta_x / cell_size_;
+  double delta_y_grid = delta_y / cell_size_;
   double cos_dyaw = cos(delta_yaw);
   double sin_dyaw = sin(delta_yaw);
   Eigen::MatrixXd transformation_matrix(3, 3);
   transformation_matrix << cos_dyaw, -sin_dyaw, delta_x_grid, sin_dyaw, cos_dyaw, delta_y_grid, 0.0,
       0.0, 1.0;
-  int new_x_grid, new_y_grid;
   for (int x = 0; x < num_cells_; ++x) {
     for (int y = 0; y < num_cells_; ++y) {
       Eigen::VectorXd old_indices(3);
       old_indices << x, y, 1.0;
       Eigen::VectorXd new_indices = transformation_matrix * old_indices;
-      map_(old_indices(0), old_indices(1)) = temp_map(x, y);
+      map_(floor(old_indices(0)), floor(old_indices(1))) = temp_map(x, y);
     }
   }
 }
 
-void OccupancyGrid::update(const std::vector<Point2d>& laser_scan)
+void OccupancyGrid::update(const std::vector<Point2d<double>>& laser_scan)
 {
-  for (const Point2d& point : laser_scan) {
+  // Create vector of free cells and reserve approximate amount of memory for max possible distance
+  std::vector<Point2d<int>> free_cells;
+  free_cells.reserve(floor(grid_size_));
+  for (const Point2d<double>& point : laser_scan) {
     // Convert position of detection to cell indices
-    Point2d grid_point{point.x / cell_size_, point.x / cell_size_};
+    Point2d<int> grid_point{floor(point.x / cell_size_), floor(point.x / cell_size_)};
     updateCellProbability(grid_point, CellState::OCCUPIED);
-    std::vector<Point2d> free_cells;
     // Run Bresenham algorithm to get all free cells
-    getFreeCells(free_cells);
-    for (const Point2d& free_cell : free_cells) {
-      updateCellProbability(free_cell.x, free_cell.y, CellState::FREE);
+    getFreeCells(grid_point, free_cells);
+    for (const Point2d<int>& free_cell : free_cells) {
+      updateCellProbability(free_cell, CellState::FREE);
     }
+    free_cells.clear();
   }
 }
 
-void OccupancyGrid::updateCellProbability(Point2d point, CellState state)
+void OccupancyGrid::updateCellProbability(const Point2d<int>& point, CellState state)
 {
   // Calculate new log odds and add to current log odds
   double log_prob{0.0};
@@ -86,13 +89,34 @@ void OccupancyGrid::updateCellProbability(Point2d point, CellState state)
       log_prob = log(p_prior_ / (1.0 - p_prior_));
       break;
   }
-  double current_log_prob = log(map_(point.x,point.y) / (1.0 - map_(point.x,point.y));
+  double current_log_prob = log(map_(point.x, point.y) / (1.0 - map_(point.x, point.y)));
   current_log_prob += log_prob;
   // Convert log odds to probability and update cell
-  map_(point.x,point.y) = 1.0 - 1.0 / (1 + exp(current_log_prob));
+  map_(point.x, point.y) = 1.0 - 1.0 / (1 + exp(current_log_prob));
 }
 
-void OccupancyGrid::getFreeCells(Point2d detection, std::vector<Point2d>& free_cells)
+void OccupancyGrid::getFreeCells(const Point2d<int>& detection,
+                                 std::vector<Point2d<int>>& free_cells)
 {
-  free_cells.push_back({0.0, 0.0});
+  int x_start = grid_center_.x;
+  int y_start = grid_center_.y;
+  int dx = detection.x - x_start;
+  int dy = detection.y - y_start;
+  int sx = x_start < detection.x ? 1 : -1;
+  int sy = y_start < detection.y ? 1 : -1;
+  int error = dx / 2;
+  int e2;
+
+  while ((x_start != detection.x) && (y_start != detection.y)) {
+    free_cells.push_back({x_start, y_start});
+    e2 = 2 * error;
+    if (e2 > dy) {
+      error += dy;
+      x_start += sx;
+    }
+    if (e2 < dx) {
+      error += dx;
+      y_start += sy;
+    }
+  }
 }

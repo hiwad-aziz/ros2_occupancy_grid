@@ -43,8 +43,8 @@ void OccupancyGridNode::handleLaserScan(const sensor_msgs::msg::LaserScan::Share
 {
   // update grid based on new laser scan data
   // TODO: calculate cartesian coordinate for each point in laser scan
-  std::vector<Point2d> scan;
-  grid_map_->update(scan);
+  std::vector<Point2d<double>> scan_cartesian;
+  grid_map_->update(scan_cartesian);
   // fill msg and publish grid
   auto message = nav_msgs::msg::OccupancyGrid();
   grid_map_->toRosMsg(message);
