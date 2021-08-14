@@ -24,6 +24,7 @@ OccupancyGridNode::OccupancyGridNode()
 
 void OccupancyGridNode::handleOdom(const nav_msgs::msg::Odometry::SharedPtr odom)
 {
+  RCLCPP_INFO(this->get_logger(), "Handling odometry data...");
   // transform based on current and previous odom data
   double delta_x = odom->pose.pose.position.x - prev_odom_.pose.pose.position.x;
   double delta_y = odom->pose.pose.position.y - prev_odom_.pose.pose.position.y;
@@ -42,6 +43,7 @@ void OccupancyGridNode::handleOdom(const nav_msgs::msg::Odometry::SharedPtr odom
 
 void OccupancyGridNode::handleLaserScan(const sensor_msgs::msg::LaserScan::SharedPtr laser_scan)
 {
+  RCLCPP_INFO(this->get_logger(), "Handling laser scan data...");
   // update grid based on new laser scan data
   std::vector<Point2d<double>> scan_cartesian = convertPolarScantoCartesianScan(laser_scan);
   grid_map_->update(scan_cartesian);
@@ -56,7 +58,7 @@ std::vector<Point2d<double>> OccupancyGridNode::convertPolarScantoCartesianScan(
 {
   std::vector<Point2d<double>> scan_cartesian;
   scan_cartesian.reserve(laser_scan->ranges.size());
-  int angle = laser_scan->angle_min;
+  float angle = laser_scan->angle_min;
   Point2d<double> cartesian_point;
   for (float range : laser_scan->ranges) {
     cartesian_point.x = range * cos(angle);

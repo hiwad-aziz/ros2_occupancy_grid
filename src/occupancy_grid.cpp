@@ -15,15 +15,15 @@ OccupancyGrid::OccupancyGrid(unsigned int grid_size, double cell_size)
 
 void OccupancyGrid::toRosMsg(nav_msgs::msg::OccupancyGrid& occupancy_grid_msg)
 {
-  occupancy_grid_msg.info.width = grid_size_;
-  occupancy_grid_msg.info.height = grid_size_;
+  occupancy_grid_msg.info.width = num_cells_;
+  occupancy_grid_msg.info.height = num_cells_;
   occupancy_grid_msg.info.resolution = cell_size_;
-  occupancy_grid_msg.info.origin.position.x = 0.0;
-  occupancy_grid_msg.info.origin.position.y = 0.0;
+  occupancy_grid_msg.info.origin.position.x = -grid_center_.x * cell_size_;
+  occupancy_grid_msg.info.origin.position.y = -grid_center_.y * cell_size_;
   occupancy_grid_msg.header.frame_id = "laser_frame";
 
-  const int num_cells = grid_size_ * grid_size_;
-  for (size_t i = 0; i < num_cells; i++) {
+  const int num_cells_grid = num_cells_ * num_cells_;
+  for (size_t i = 0; i < num_cells_grid; i++) {
     double& occ_prob = map_.data()[i];
     if (occ_prob == 0.5) {
       occupancy_grid_msg.data.push_back(-1);
@@ -100,8 +100,8 @@ void OccupancyGrid::getFreeCells(const Point2d<int>& detection,
 {
   int x_start = grid_center_.x;
   int y_start = grid_center_.y;
-  int dx = detection.x - x_start;
-  int dy = detection.y - y_start;
+  int dx = abs(detection.x - x_start);
+  int dy = -abs(detection.y - y_start);
   int sx = x_start < detection.x ? 1 : -1;
   int sy = y_start < detection.y ? 1 : -1;
   int error = dx / 2;
