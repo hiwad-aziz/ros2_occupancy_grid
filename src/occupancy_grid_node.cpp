@@ -43,7 +43,6 @@ void OccupancyGridNode::handleOdom(const nav_msgs::msg::Odometry::SharedPtr odom
 void OccupancyGridNode::handleLaserScan(const sensor_msgs::msg::LaserScan::SharedPtr laser_scan)
 {
   // update grid based on new laser scan data
-  // TODO: calculate cartesian coordinate for each point in laser scan
   std::vector<Point2d<double>> scan_cartesian = convertPolarScantoCartesianScan(laser_scan);
   grid_map_->update(scan_cartesian);
   // fill msg and publish grid

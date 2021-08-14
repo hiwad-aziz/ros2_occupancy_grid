@@ -18,9 +18,9 @@ void OccupancyGrid::toRosMsg(nav_msgs::msg::OccupancyGrid& occupancy_grid_msg)
   occupancy_grid_msg.info.width = grid_size_;
   occupancy_grid_msg.info.height = grid_size_;
   occupancy_grid_msg.info.resolution = cell_size_;
-  occupancy_grid_msg.info.origin.position.x = -grid_center_.x;
-  occupancy_grid_msg.info.origin.position.y = -grid_center_.y;
-  occupancy_grid_msg.header.frame_id = "odom";
+  occupancy_grid_msg.info.origin.position.x = 0.0;
+  occupancy_grid_msg.info.origin.position.y = 0.0;
+  occupancy_grid_msg.header.frame_id = "laser_frame";
 
   const int num_cells = grid_size_ * grid_size_;
   for (size_t i = 0; i < num_cells; i++) {
