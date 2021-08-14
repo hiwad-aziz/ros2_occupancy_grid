@@ -62,7 +62,8 @@ void OccupancyGrid::update(const std::vector<Point2d<double>>& laser_scan)
   free_cells.reserve(floor(grid_size_));
   for (const Point2d<double>& point : laser_scan) {
     // Convert position of detection to cell indices
-    Point2d<int> grid_point{floor(point.x / cell_size_), floor(point.x / cell_size_)};
+    Point2d<int> grid_point{floor(point.x / cell_size_) + grid_center_.x,
+                            floor(point.y / cell_size_) + grid_center_.y};
     updateCellProbability(grid_point, CellState::OCCUPIED);
     // Run Bresenham algorithm to get all free cells
     getFreeCells(grid_point, free_cells);
