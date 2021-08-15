@@ -27,6 +27,7 @@ class OccupancyGrid {
  private:
   void updateCellProbability(const Point2d<int>& point, CellState state);
   void getFreeCells(const Point2d<int>& detection, std::vector<Point2d<int>>& free_cells);
+  bool isInGridBounds(int x, int y);
   Eigen::MatrixXd map_;
   unsigned int grid_size_{20};
   double cell_size_{0.1};

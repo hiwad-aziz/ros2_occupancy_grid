@@ -50,7 +50,12 @@ void OccupancyGrid::update(double delta_x, double delta_y, double delta_yaw)
       Eigen::VectorXd old_indices(3);
       old_indices << x, y, 1.0;
       Eigen::VectorXd new_indices = transformation_matrix * old_indices;
-      map_(floor(old_indices(0)), floor(old_indices(1))) = temp_map(x, y);
+      if (isInGridBounds(new_indices(0), new_indices(1))) {
+        map_(floor(new_indices(0)), floor(new_indices(1))) = temp_map(x, y);
+      }
+      else {
+        map_(x, y) = p_prior_;
+      }
     }
   }
 }
@@ -119,4 +124,11 @@ void OccupancyGrid::getFreeCells(const Point2d<int>& detection,
       y_start += sy;
     }
   }
+}
+
+bool OccupancyGrid::isInGridBounds(int x, int y)
+{
+  if (!(x >= 0 && x < num_cells_)) return false;
+  if (!(y >= 0 && y < num_cells_)) return false;
+  return true;
 }

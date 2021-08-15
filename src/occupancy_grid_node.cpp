@@ -50,6 +50,7 @@ void OccupancyGridNode::handleLaserScan(const sensor_msgs::msg::LaserScan::Share
   // fill msg and publish grid
   auto message = nav_msgs::msg::OccupancyGrid();
   grid_map_->toRosMsg(message);
+  message.header.stamp = this->get_clock()->now();
   publisher_->publish(message);
 }
 
