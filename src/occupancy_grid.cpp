@@ -48,9 +48,14 @@ void OccupancyGrid::update(double delta_x, double delta_y, double delta_yaw)
   for (int x = 0; x < num_cells_; ++x) {
     for (int y = 0; y < num_cells_; ++y) {
       Eigen::VectorXd old_indices(3);
-      old_indices << x, y, 1.0;
+      // Translate (x, y) to origin
+      old_indices << x - grid_center_.x, y - grid_center_.y, 1.0;
+      // Transform according to robot movement
       Eigen::VectorXd new_indices = transformation_matrix * old_indices;
-      if (isInGridBounds(new_indices(0), new_indices(1))) {
+      // Translate back to map indices
+      new_indices(0) += grid_center_.x;
+      new_indices(1) += grid_center_.y;
+      if (isInGridBounds(floor(new_indices(0)), floor(new_indices(1)))) {
         map_(floor(new_indices(0)), floor(new_indices(1))) = temp_map(x, y);
       }
       else {
