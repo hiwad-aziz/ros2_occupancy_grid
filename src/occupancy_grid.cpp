@@ -36,7 +36,8 @@ void OccupancyGrid::toRosMsg(nav_msgs::msg::OccupancyGrid& occupancy_grid_msg)
 
 void OccupancyGrid::update(double delta_x, double delta_y, double delta_yaw)
 {
-  Eigen::MatrixXd temp_map = map_;
+  Eigen::MatrixXd temp_map(cell_size_, cell_size_);
+  temp_map.setConstant(0.5);
   // Convert position delta to cell delta
   double delta_x_grid = delta_x / cell_size_;
   double delta_y_grid = delta_y / cell_size_;
@@ -56,13 +57,11 @@ void OccupancyGrid::update(double delta_x, double delta_y, double delta_yaw)
       new_indices(0) += grid_center_.x;
       new_indices(1) += grid_center_.y;
       if (isInGridBounds(floor(new_indices(0)), floor(new_indices(1)))) {
-        map_(floor(new_indices(0)), floor(new_indices(1))) = temp_map(x, y);
-      }
-      else {
-        map_(x, y) = p_prior_;
+        temp_map(floor(new_indices(0)), floor(new_indices(1))) = map_(x, y);
       }
     }
   }
+  map_ = temp_map;
 }
 
 void OccupancyGrid::update(const std::vector<Point2d<double>>& laser_scan)
