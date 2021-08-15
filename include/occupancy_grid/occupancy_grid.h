@@ -32,8 +32,8 @@ class OccupancyGrid {
   double cell_size_{0.1};
   unsigned int num_cells_{200};
   Point2d<int> grid_center_{100, 100};
-  const double p_free_{0.3};
-  const double p_occ_{0.7};
+  const double p_free_{0.4};
+  const double p_occ_{0.6};
   const double p_prior_{0.5};
 };
 
