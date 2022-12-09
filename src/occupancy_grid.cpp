@@ -36,7 +36,7 @@ void OccupancyGrid::toRosMsg(nav_msgs::msg::OccupancyGrid& occupancy_grid_msg)
 
 void OccupancyGrid::update(double delta_x, double delta_y, double delta_yaw)
 {
-  Eigen::MatrixXd temp_map(cell_size_, cell_size_);
+  Eigen::MatrixXd temp_map(num_cells_, num_cells_);
   temp_map.setConstant(0.5);
   // Convert position delta to cell delta
   double delta_x_grid = delta_x / cell_size_;
